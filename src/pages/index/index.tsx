@@ -1,15 +1,23 @@
 import { Component } from 'react'
-import { View, Swiper, SwiperItem, Image } from '@tarojs/components'
-import { AtSearchBar } from 'taro-ui'
+import { View, Swiper, SwiperItem, Image, Text } from '@tarojs/components'
+import { AtSearchBar, AtTabBar } from 'taro-ui'
+import api from '../../services/api'
+import { getRecommendPlayListApi } from '../../api'
 import classnames from 'classnames'
 import './index.scss'
-
 interface PageState {
+  current: number
   searchValue: string
   bannerList: Array<{
     typeTitle: string
     pic: string
     targetId: number
+  }>
+  recommendPlayList: Array<{
+    id: number
+    name: string
+    picUrl: string
+    playCount: number
   }>
 }
 
@@ -18,14 +26,17 @@ export default class Index extends Component<any, PageState> {
   constructor (props) {
     super(props)
     this.state = {
+      current: 0,
       searchValue: '',
-      bannerList: []
+      bannerList: [],
+      recommendPlayList: []
     }
   }
 
-  componentWillMount () { }
-
-  componentDidMount () { }
+  componentDidMount () {
+    this.getBanner()
+    this.getRecommendPlayList()
+  }
 
   componentWillUnmount () { }
 
@@ -37,8 +48,49 @@ export default class Index extends Component<any, PageState> {
     console.log('click goSearch')
   }
 
+  async getBanner () {
+    try {
+      let res = await api.get('/banner', {
+        type: 2
+      })
+      const { data } = res
+      if (data.banners) {
+        this.setState({
+          bannerList: data.banners
+        })
+      }
+    } catch (err) {
+      console.log(err)
+    }
+  }
+
+  async getRecommendPlayList () {
+    try {
+      let res = await getRecommendPlayListApi()
+      const recommendPlayList = res.data.result
+      this.setState({
+        recommendPlayList
+      })
+    } catch (err) {
+      console.log(err)
+    }
+  }
+
+  getDetail (item) {
+    Taro.navigateTo({
+      url: `/pages/playListDetail/index?id=${item.id}&name=${item.name}`
+    })
+  }
+
+  switchTab (value) {
+    if (value !== 1) return
+    Taro.reLaunch({
+      url: '/pages/my/index'
+    })
+  }
+
   render () {
-    const { searchValue, bannerList } = this.state
+    const { searchValue, bannerList, recommendPlayList } = this.state
 
     return (
       <View className={classnames({
@@ -66,6 +118,41 @@ export default class Index extends Component<any, PageState> {
             </SwiperItem>
           ))}
         </Swiper>
+        <View className="handle_list"></View>
+        <View className="recommend_playlist">
+            <View className="recommend_playlist__title">推荐歌单</View>
+            <View className="recommend_playlist__content">
+              {recommendPlayList.map((item) => (
+                <View
+                  key={item.id}
+                  className="recommend_playlist__item"
+                  onClick={this.getDetail.bind(this, item)}
+                >
+                  <Image 
+                    src={`${item.picUrl}?imageView&thumbnail=250x0`}
+                    className="recommend_playlist__item__cover"
+                  />
+                  <View className="recommend_playlist__item__cover__num">
+                    <Text className="at-icon at-icon-sound"></Text>
+                    {item.playCount < 10000 ? item.playCount : `${Number(item.playCount / 10000).toFixed(0)}万`}
+                  </View>
+                  <View className="recommend_playlist__item__title">
+                    {item.name}
+                  </View>
+                </View>
+              ))}
+            </View>
+          </View>
+          <AtTabBar 
+            fixed
+            selectedColor="#d43c33"
+            tabList={[
+              {title: '发现', iconPrefixClass: "fa", iconType: "feedd"},
+              {title: '我的', iconPrefixClass: 'fa', iconType: 'music'}
+            ]}
+            onClick={this.switchTab.bind(this)}
+            current={this.state.current}
+          />
       </View>
     )
   }
