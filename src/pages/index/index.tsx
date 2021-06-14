@@ -1,4 +1,5 @@
 import { Component } from 'react'
+import Taro from '@tarojs/taro'
 import { View, Swiper, SwiperItem, Image, Text } from '@tarojs/components'
 import { AtSearchBar, AtTabBar } from 'taro-ui'
 import api from '../../services/api'
@@ -76,7 +77,8 @@ export default class Index extends Component<any, PageState> {
     }
   }
 
-  getDetail (item) {
+  goDetail (item) {
+    console.log('item', item)
     Taro.navigateTo({
       url: `/pages/playListDetail/index?id=${item.id}&name=${item.name}`
     })
@@ -126,7 +128,7 @@ export default class Index extends Component<any, PageState> {
                 <View
                   key={item.id}
                   className="recommend_playlist__item"
-                  onClick={this.getDetail.bind(this, item)}
+                  onClick={this.goDetail.bind(this, item)}
                 >
                   <Image 
                     src={`${item.picUrl}?imageView&thumbnail=250x0`}
